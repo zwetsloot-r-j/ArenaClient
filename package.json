@@ -1,0 +1,15 @@
+{
+  "name": "arena",
+  "version": "1.0.0",
+  "description": "top down shooter game client",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Zwetsloot",
+  "license": "ISC",
+  "dependencies": {
+    "redux": "^3.7.2",
+    "reselect": "^3.0.1"
+  }
+}
