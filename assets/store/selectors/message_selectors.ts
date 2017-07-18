@@ -6,14 +6,8 @@ export function selectMessageCollectionState(state: MainState | {}) : MessageCol
   return (<MainState>state).message;
 };
 
-export const selectCurrentMessage : (state: MainState | {}) => MessageState | undefined =
+export const selectNextMessage : (state: MainState | {}) => MessageState =
   createSelector(
     selectMessageCollectionState,
-    (state: MessageCollectionState) => state.current
-  );
-
-export const selectHistory : (state: MainState | {}) => MessageState[] =
-  createSelector(
-    selectMessageCollectionState,
-    (state: MessageCollectionState) => state.history
+    (state: MessageCollectionState) => state.next
   );

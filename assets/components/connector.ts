@@ -6,7 +6,6 @@ const {ccclass} = cc._decorator;
 export default class Connector extends cc.Component {
 
   onLoad() {
-    store.dispatch(connect());
     store.dispatch(joinLobby());
   }
 

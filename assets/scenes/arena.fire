@@ -184,25 +184,25 @@
       }
     ],
     "_prefab": null,
-    "_id": "13e5fHx9/xAeqnJ0wLL+Sje",
+    "_id": "1f613ieMGZF8IAihxykOJIi",
     "_opacity": 255,
     "_color": {
       "__type__": "cc.Color",
-      "r": 152,
-      "g": 228,
-      "b": 235,
+      "r": 167,
+      "g": 167,
+      "b": 167,
       "a": 255
     },
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
       "x": 0.5,
-      "y": 0.5
+      "y": 1
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 0,
-      "height": 40
+      "width": 900,
+      "height": 200
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -210,8 +210,8 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": 20,
-      "y": -195
+      "x": 0,
+      "y": -120
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -221,26 +221,35 @@
     "groupIndex": 0
   },
   {
-    "__type__": "cc.Label",
+    "__type__": "cc.Layout",
     "_name": "",
     "_objFlags": 0,
     "node": {
       "__id__": 4
     },
     "_enabled": true,
-    "_useOriginalSize": false,
-    "_actualFontSize": 40,
-    "_fontSize": 40,
-    "_lineHeight": 40,
-    "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
-    "_spacingX": 0,
-    "_N$string": "",
-    "_N$horizontalAlign": 1,
-    "_N$verticalAlign": 1,
-    "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_layoutSize": {
+      "__type__": "cc.Size",
+      "width": 900,
+      "height": 200
+    },
+    "_resize": 2,
+    "_N$layoutType": 2,
+    "_N$padding": 0,
+    "_N$cellSize": {
+      "__type__": "cc.Size",
+      "width": 40,
+      "height": 40
+    },
+    "_N$startAxis": 0,
+    "_N$paddingLeft": 0,
+    "_N$paddingRight": 0,
+    "_N$paddingTop": 10,
+    "_N$paddingBottom": 5,
+    "_N$spacingX": 0,
+    "_N$spacingY": 6,
+    "_N$verticalDirection": 1,
+    "_N$horizontalDirection": 0
   },
   {
     "__type__": "19e0aDEq11BaJEaPV7U+4gX",
@@ -249,7 +258,10 @@
     "node": {
       "__id__": 4
     },
-    "_enabled": true
+    "_enabled": true,
+    "message": {
+      "__uuid__": "ae0adf6b-5fac-475b-975c-8e60a358d71a"
+    }
   },
   {
     "__type__": "cc.Sprite",

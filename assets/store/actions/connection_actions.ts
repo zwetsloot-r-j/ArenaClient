@@ -1,7 +1,5 @@
 import {Action, createAction} from "./actions"
-import {createConnectAction, ConnectActionPayload} from "../middleware/connection_middleware"
-
-const server = "ws://localhost:4000/socket";
+import {createJoinAction, JoinActionPayload} from "../middleware/connection_middleware"
 
 export enum Actions {
   CONNECT = "connect",
@@ -12,16 +10,15 @@ enum Channels {
   BATTLE = "battle:{id}",
 };
 
-export function connect() : Action {
-  return createAction(Actions.CONNECT);
-};
-
 export function joinLobby() : Action {
-  let payload = <ConnectActionPayload>{channel: Channels.BATTLE_LOBBY};
-  return createConnectAction(payload);
+  let payload : JoinActionPayload = {channel: Channels.BATTLE_LOBBY};
+  return createJoinAction(payload);
 };
 
-export function joinBattle(id: string) : Action {
-  let payload = <ConnectActionPayload>{channel: Channels.BATTLE.replace("{id}", id)};
-  return createConnectAction(payload);
+export function joinBattle(id: string, user: string) : Action {
+  let payload : JoinActionPayload = {
+    channel: Channels.BATTLE.replace("{id}", id),
+    user: user,
+  };
+  return createJoinAction(payload);
 };

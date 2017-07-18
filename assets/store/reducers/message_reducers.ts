@@ -1,16 +1,13 @@
 import {Reducer, AnyAction} from "redux"
-
-enum Actions {
-  MESSAGE = "message",
-};
+import {Actions, MessagePayload} from "../actions/message_actions"
 
 export type MessageState = {
   body: string,
-  displayTime?: number
+  displayTime: number
 };
 
 export type MessageCollectionState = {
-  current?: MessageState,
+  next?: MessageState,
   history: MessageState[],
 };
 
@@ -26,9 +23,12 @@ const updateMessageState : Reducer<MessageCollectionState> = function(
   switch(action.type) {
 
     case Actions.MESSAGE:
-      let current = <MessageState>action.payload;
-      let history = state.current === undefined ? state.history : [ state.current, ...state.history ];
-      return { ...state, current, history };
+      {
+        let payload : MessagePayload = action.payload;
+        let next : MessageState = payload.message;
+        let history = state.next === undefined ? state.history : [ state.next, ...state.history ];
+        return { ...state, next, history };
+      }
 
     default:
       return state;
