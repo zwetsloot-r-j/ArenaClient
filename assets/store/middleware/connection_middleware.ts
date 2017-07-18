@@ -2,6 +2,8 @@ import {MainState} from "../reducers/main_reducer"
 import {ConnectionState} from "../reducers/connection_reducers"
 import {Socket, Channel} from "../../utilities/phoenix"
 import {AnyAction} from "redux"
+import {Immutable, immutable, immutableDeep} from "../../utilities/immutable_types"
+import {Action, createAction} from "../actions/actions"
 
 type Server = {
   adress: string,
@@ -13,37 +15,31 @@ let server : Server = {
   adress: "ws://localhost:4000/socket",
 };
 
-export type JoinActionPayload = {
+export type JoinActionPayload = Immutable<{
   channel: string,
   user?: string,
-};
+}>;
 
-export type JoinAction = {
+export type JoinAction = Immutable<{
   type: "join-channel",
   payload: JoinActionPayload,
-};
+}>;
 
 export function createJoinAction(payload: JoinActionPayload) : JoinAction {
-  return {
-    type: "join-channel",
-    payload,
-  }
+  return createAction("join-channel", payload);
 };
 
-export type DispatchToServerPayload = {
+export type DispatchToServerPayload = Immutable<{
   action: AnyAction
-};
+}>;
 
-export type DispatchToServerAction = {
+export type DispatchToServerAction = Immutable<{
   type: "dispatch-to-server",
   payload: DispatchToServerPayload,
-};
+}>;
 
 export function toServer(action: AnyAction) : DispatchToServerAction {
-  return {
-    type: "dispatch-to-server",
-    payload: {action},
-  }
+  return createAction("dispatch-to-server", immutable({action}));
 };
 
 export enum InterceptedActions {
@@ -70,29 +66,29 @@ export default function({dispatch, getState}) {
             server.socket.connect();
           }
 
-          let channel = action.payload.channel;
-          let payload = {channel};
+          let channel = action.payload.get("channel");
+          let payload = immutable({channel});
           console.log(`connecting to channel: ${channel}`);
 
           if (server.channel !== undefined) {
             server.channel.leave();
           }
 
-          let authentication = action.payload.user === undefined ? {} : {user: action.payload.user};
+          let authentication = action.payload.get("user") === undefined ? {} : {user: action.payload.get("user")};
 
           server.channel = server.socket.channel(channel, authentication);
           server.channel.on("actions", 
             ({actionList}) => actionList.forEach(
-              (serverAction) => dispatch(serverAction)
+              (serverAction) => dispatch(createAction(serverAction.type, immutableDeep(serverAction.payload)))
             )
           );
           server.channel
             .join()
-            .receive("ok", () => dispatch({type: Actions.JOIN_CHANNEL_SUCCEEDED, payload}))
-            .receive("error", () => dispatch({type: Actions.JOIN_CHANNEL_FAILED, payload}))
+            .receive("ok", () => dispatch(createAction(Actions.JOIN_CHANNEL_SUCCEEDED, payload)))
+            .receive("error", () => dispatch(createAction(Actions.JOIN_CHANNEL_FAILED, payload)))
             ;
 
-          return next({type: Actions.JOIN_CHANNEL_REQUEST, payload});
+          return next(createAction(Actions.JOIN_CHANNEL_REQUEST, payload));
         }
 
       case InterceptedActions.DISPATCH_TO_SERVER:
@@ -102,12 +98,12 @@ export default function({dispatch, getState}) {
             return next(action);
           }
 
-          server.channel.push("action", action.payload.action);
+          server.channel.push("action", action.payload.get("action").toJS());
           return next(action);
         }
 
       default:
-        next(action);
+        return next(action);
     }
 
   };

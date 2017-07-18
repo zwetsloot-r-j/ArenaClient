@@ -9,7 +9,12 @@
   "author": "Zwetsloot",
   "license": "ISC",
   "dependencies": {
+    "immutable": "^3.8.1",
     "redux": "^3.7.2",
+    "redux-immutable": "^4.0.0",
     "reselect": "^3.0.1"
+  },
+  "devDependencies": {
+    "tsimmutable": "^0.4.1"
   }
 }

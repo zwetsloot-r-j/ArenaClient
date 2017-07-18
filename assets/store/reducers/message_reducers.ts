@@ -1,23 +1,26 @@
-import {Reducer, AnyAction} from "redux"
+import {Immutable, immutable} from "../../utilities/immutable_types"
+import {List} from "immutable"
 import {Actions, MessagePayload} from "../actions/message_actions"
+import {Action} from "../actions/actions"
+import {Reducer} from "./reducer_types"
 
-export type MessageState = {
+export type MessageState = Immutable<{
   body: string,
   displayTime: number
-};
+}>;
 
-export type MessageCollectionState = {
+export type MessageCollectionState = Immutable<{
   next?: MessageState,
-  history: MessageState[],
-};
+  history: List<MessageState>,
+}>;
 
-const initialState : MessageCollectionState = {
-  history: [],
-};
+const initialState : MessageCollectionState = immutable({
+  history: List(),
+});
 
 const updateMessageState : Reducer<MessageCollectionState> = function(
   state: MessageCollectionState = initialState,
-  action: AnyAction
+  action: Action
 ) : MessageCollectionState {
 
   switch(action.type) {
@@ -25,9 +28,14 @@ const updateMessageState : Reducer<MessageCollectionState> = function(
     case Actions.MESSAGE:
       {
         let payload : MessagePayload = action.payload;
-        let next : MessageState = payload.message;
-        let history = state.next === undefined ? state.history : [ state.next, ...state.history ];
-        return { ...state, next, history };
+        let next : MessageState = payload.get("message");
+        let previous : MessageState | undefined = state.get("next");
+        let history : List<MessageState> = state.get("history");
+
+        if (previous !== undefined) {
+          state = state.set("history", history.unshift(previous));
+        }
+        return state.set("next", next);
       }
 
     default:

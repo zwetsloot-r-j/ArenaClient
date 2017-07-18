@@ -32,12 +32,12 @@ export default class MessageRenderer extends cc.Component {
     let label = messageNode.getComponent(cc.Label);
 
     messageNode.opacity = 255 - 25 * this.node.children.length;
-    label.string = nextMessage.body;
+    label.string = nextMessage.get("body");
     this.node.addChild(messageNode);
 
     this.timers = [ ...this.timers, setTimeout(() => {
       messageNode.removeFromParent(); 
-    }, nextMessage.displayTime) ];
+    }, nextMessage.get("displayTime")) ];
 
     displayingMessages.forEach((child) => {
       child.opacity = 255 - 25 * this.node.children.length;

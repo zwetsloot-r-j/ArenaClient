@@ -1,9 +1,11 @@
-import {Action as ReduxAction} from "redux"
-import {ConnectAction, ConnectActionPayload} from "../middleware/connection_middleware"
+import {Action as ReduxAction, AnyAction} from "redux"
+import {JoinActionPayload} from "../middleware/connection_middleware"
 import {AddPlayerPayload} from "./player_actions"
+import {Immutable, immutable} from "../../utilities/immutable_types"
+import {Record} from "immutable"
 
-type Payload = {}
-  | ConnectActionPayload
+type Payload = Immutable<{}>
+  | JoinActionPayload
   | AddPlayerPayload
   ;
 
@@ -12,9 +14,8 @@ type StandardAction = ReduxAction & {
 };
 
 export type Action = StandardAction
-  | ConnectAction
   ;
 
-export function createAction(type: string, payload: Payload = {}) : Action {
+export function createAction(type: string, payload: Payload = immutable({})) : Action {
   return {type, payload};
 };

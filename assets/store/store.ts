@@ -1,4 +1,5 @@
-import {createStore, applyMiddleware, compose} from 'redux'
+import {createStore, applyMiddleware, compose} from "redux"
+import * as Immutable from "immutable"
 import connectionMiddleware from "./middleware/connection_middleware"
 import reduce from "./reducers/main_reducer"
 
@@ -8,7 +9,7 @@ const composeMiddleware = global.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__
   ? global.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({})
   : compose;
 
-let store = createStore(reduce, {}, composeMiddleware(
+let store = createStore(reduce, Immutable.Map(), composeMiddleware(
   applyMiddleware(connectionMiddleware)
 ));
 export default store;

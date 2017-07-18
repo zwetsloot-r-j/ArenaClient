@@ -1,46 +1,46 @@
-import {Reducer, AnyAction} from "redux"
+import {Immutable, immutable} from "../../utilities/immutable_types"
 import {Actions, JoinActionPayload} from "../middleware/connection_middleware"
-import {Socket} from "../../utilities/phoenix"
+import {Action} from "../actions/actions"
+import {Reducer} from "./reducer_types"
 
-const server = "ws://localhost:4000/socket";
 
-export type ConnectionState = {
+export type ConnectionState = Immutable<{
   connecting: boolean,
   channelName: string,
-};
+}>;
 
-const initialState = {
+const initialState = immutable({
   connecting: false,
   channelName: "",
-};
+});
 
 const updateConnectionState : Reducer<ConnectionState> = function(
   state: ConnectionState = initialState,
-  action: AnyAction
+  action: Action
 ) : ConnectionState {
 
   switch(action.type) {
 
     case Actions.JOIN_CHANNEL_REQUEST:
-      let requestPayload : JoinActionPayload = action.payload;
-      return { ...state,
-        connecting: true,
-        channelName: requestPayload.channel,
-      };
+      {
+        let payload : JoinActionPayload = action.payload;
+        let channel : string = payload.get("channel");
+        return state
+          .set("connecting", true)
+          .set("channelName", channel)
+          ;
+      }
 
     case Actions.JOIN_CHANNEL_SUCCEEDED:
-      let succeededPayload : JoinActionPayload = action.payload;
-      return { ...state,
-        connecting: false,
-      };
+      return state
+        .set("connecting", false)
+        ;
 
     case Actions.JOIN_CHANNEL_FAILED:
-      let failedPayload : JoinActionPayload = action.payload;
-      console.warn(`connection failed for channel: ${failedPayload.channel}`);
-      return { ...state,
-        connecting: false,
-        channelName: "",
-      };
+      return state
+        .set("connecting", false)
+        .set("channelName", "")
+        ;
 
     default:
       return state;
