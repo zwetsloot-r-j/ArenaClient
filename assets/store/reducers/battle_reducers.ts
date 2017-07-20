@@ -14,11 +14,13 @@ type JoinBattlePayload = Immutable<{
 export type BattleState = Immutable<{
   battleId: string,
   user: string,
+  version: number,
 }>;
 
 const initialState : BattleState = immutable({
   battleId: "",
   user: "",
+  version: 0,
 });
 
 const updateBattleState : Reducer<BattleState> = function(

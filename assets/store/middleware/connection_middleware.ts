@@ -20,10 +20,10 @@ export type JoinActionPayload = Immutable<{
   user?: string,
 }>;
 
-export type JoinAction = Immutable<{
+export type JoinAction = {
   type: "join-channel",
   payload: JoinActionPayload,
-}>;
+};
 
 export function createJoinAction(payload: JoinActionPayload) : JoinAction {
   return createAction("join-channel", payload);
@@ -33,10 +33,10 @@ export type DispatchToServerPayload = Immutable<{
   action: AnyAction
 }>;
 
-export type DispatchToServerAction = Immutable<{
+export type DispatchToServerAction = {
   type: "dispatch-to-server",
   payload: DispatchToServerPayload,
-}>;
+};
 
 export function toServer(action: AnyAction) : DispatchToServerAction {
   return createAction("dispatch-to-server", immutable({action}));
@@ -48,7 +48,7 @@ export enum InterceptedActions {
 };
 
 export enum Actions {
-  JOIN_CHANNEL_REQUEST = "join_channel-request",
+  JOIN_CHANNEL_REQUEST = "join-channel-request",
   JOIN_CHANNEL_SUCCEEDED = "join-channel-succeeded",
   JOIN_CHANNEL_FAILED = "join-channel-failed",
 };
@@ -74,7 +74,7 @@ export default function({dispatch, getState}) {
             server.channel.leave();
           }
 
-          let authentication = action.payload.get("user") === undefined ? {} : {user: action.payload.get("user")};
+          let authentication = {};
 
           server.channel = server.socket.channel(channel, authentication);
           server.channel.on("actions", 

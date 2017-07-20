@@ -7,9 +7,9 @@ const {ccclass} = cc._decorator;
 export default class PlayerHandler extends cc.Component {
 
   onLoad() {
-    store.dispatch(addPlayer(immutable({
-      id: "1"
-    })));
+//    store.dispatch(addPlayer(immutable({
+//      id: "1"
+//    })));
   }
 
 }

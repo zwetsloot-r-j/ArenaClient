@@ -1,6 +1,8 @@
-import store from "../store/store"
+import subscribe from "../utilities/subscriber"
+import {MainState} from "../store/reducers/main_reducer"
 import {selectNextMessage} from "../store/selectors/message_selectors"
 import {MessageState} from "../store/reducers/message_reducers"
+import {List} from "immutable"
 const {ccclass, property} = cc._decorator;
 
 @ccclass
@@ -12,20 +14,19 @@ export default class MessageRenderer extends cc.Component {
   })
   private message: cc.Prefab
   private unsubscribe: () => void
-  private timers: number[]
+  private timers: List<number>
 
   onLoad() : void {
-    this.timers = [];
-    this.unsubscribe = store.subscribe(() => this.render());
+    this.timers = List();
+    this.unsubscribe = subscribe(selectNextMessage, (state: MessageState) => this.render(state));
   }
 
-  render() : void {
-    let nextMessage = selectNextMessage(store.getState());
+  render(nextMessage: MessageState) : void {
     if (nextMessage === undefined) {
       return;
     }
 
-    let displayingMessages = [ ...this.node.children ];
+    let displayingMessages = List([ ...this.node.children ]);
     displayingMessages.forEach((child) => child.removeFromParent());
 
     let messageNode = cc.instantiate(this.message);
@@ -35,9 +36,9 @@ export default class MessageRenderer extends cc.Component {
     label.string = nextMessage.get("body");
     this.node.addChild(messageNode);
 
-    this.timers = [ ...this.timers, setTimeout(() => {
+    this.timers = this.timers.push(setTimeout(() => {
       messageNode.removeFromParent(); 
-    }, nextMessage.get("displayTime")) ];
+    }, nextMessage.get("displayTime")));
 
     displayingMessages.forEach((child) => {
       child.opacity = 255 - 25 * this.node.children.length;
@@ -48,7 +49,7 @@ export default class MessageRenderer extends cc.Component {
   onExit() : void {
     this.unsubscribe();
     this.timers.forEach((timer) => clearTimeout(timer));
-    this.timers = [];
+    this.timers = List();
   }
 
 }
