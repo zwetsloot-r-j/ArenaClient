@@ -2,7 +2,8 @@ import {Action, createAction} from "./actions"
 import {Immutable, immutable} from "../../utilities/immutable_types"
 
 export enum Actions {
-  SYNCHRONIZE_BATTLE = "synchronize-battle"
+  JOIN_BATTLE = "join-battle", //server only for now
+  SYNCHRONIZE_BATTLE = "sync-battle"
 };
 
 export type SynchronizeBattlePayload = Immutable<{

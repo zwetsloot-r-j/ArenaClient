@@ -34,6 +34,7 @@ const updatePlayerState : Reducer<PlayerCollectionState> = function(
       return state
         .set("playerCount", playerCount + 1)
         .set("players", players)
+        ;
 
     default:
       return state;
