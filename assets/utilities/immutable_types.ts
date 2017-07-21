@@ -3,6 +3,7 @@ import {Map} from "immutable"
 export type Immutable<Obj> = {
   get<Key extends keyof Obj>(key: Key) : Obj[Key];
   set<Key extends keyof Obj>(key: Key, value: any) : Immutable<Obj>;
+  forEach(sideEffect: (value?: any, key?: any, iterator?: any) => any, context?: any) : number;
 };
 
 export function immutable<Obj>(obj: Obj) : Immutable<Obj> {
