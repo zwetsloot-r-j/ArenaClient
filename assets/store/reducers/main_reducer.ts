@@ -6,6 +6,7 @@ import message, {MessageCollectionState} from "./message_reducers"
 import battle, {BattleState} from "./battle_reducers"
 import fighters, {FighterCollectionState} from "./fighter_reducers"
 import movements, {MovementCollectionState} from "./movement_reducers"
+import controller, {ControllerState} from "./controller_reducers"
 
 export type MainState = Immutable.Map<string, any> & {
   players: PlayerCollectionState,
@@ -14,6 +15,7 @@ export type MainState = Immutable.Map<string, any> & {
   battle: BattleState,
   fighters: FighterCollectionState,
   movements: MovementCollectionState,
+  controller: ControllerState,
 };
 
 export default combineReducers({
@@ -23,4 +25,5 @@ export default combineReducers({
   battle,
   fighters,
   movements,
+  controller,
 });

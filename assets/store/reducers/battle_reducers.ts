@@ -1,7 +1,8 @@
 import {Immutable, immutable} from "../../utilities/immutable_types"
+import {List} from "immutable"
 import {Reducer} from "./reducer_types"
 import {Action} from "../actions/actions"
-import {Actions, SynchronizeBattlePayload} from "../actions/battle_actions"
+import {Actions, SynchronizeBattlePayload, ArchiveBattleActionPayload} from "../actions/battle_actions"
 
 type JoinBattlePayload = Immutable<{
   battleId: string,
@@ -12,12 +13,14 @@ export type BattleState = Immutable<{
   battleId: string,
   user: string,
   version: number,
+  actionHistory: List<Action>,
 }>;
 
 const initialState : BattleState = immutable({
   battleId: "",
   user: "",
   version: 0,
+  actionHistory: List(),
 });
 
 const updateBattleState : Reducer<BattleState> = function(
@@ -45,6 +48,19 @@ const updateBattleState : Reducer<BattleState> = function(
 
         return state
           .set("version", version);
+      }
+
+    case Actions.ARCHIVE_BATTLE_ACTION:
+      {
+        let payload : ArchiveBattleActionPayload = action.payload;
+        let archivableAction = payload.get("action");
+        let actionHistory = state.get("actionHistory")
+          .push(archivableAction)
+          ;
+
+        return state
+          .set("actionHistory", actionHistory)
+          ;
       }
 
     default:

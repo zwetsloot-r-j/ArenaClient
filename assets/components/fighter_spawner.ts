@@ -1,5 +1,9 @@
 import subscribe from "../utilities/subscriber"
+import store from "../store/store"
+import {MainState} from "../store/reducers/main_reducer"
 import {selectFighterCollectionState} from "../store/selectors/fighter_selectors"
+import {selectBattlePlayer} from "../store/selectors/battle_selectors"
+import {setControlledMovement} from "../store/actions/controller_actions"
 import {FighterCollectionState, FighterState} from "../store/reducers/fighter_reducers"
 import {List} from "immutable"
 const {ccclass, property} = cc._decorator;
@@ -42,6 +46,10 @@ export default class FighterSpawner extends cc.Component {
     fighterComponent.initialize(fighter);
 
     this.node.addChild(fighterInstance);
+
+    if (fighter.get("playerId") === selectBattlePlayer(<MainState>store.getState())) {
+      store.dispatch(setControlledMovement(fighter.get("movementId")));
+    }
   }
 
   onExit() : void {

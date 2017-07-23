@@ -2,7 +2,13 @@ import {Immutable, immutable} from "../../utilities/immutable_types"
 import {List} from "immutable"
 import {Reducer} from "./reducer_types"
 import {Action} from "../actions/actions"
-import {Actions, SyncMovementPayload, SetStartPositionPayload, CreateMovementPayload} from "../actions/movement_actions"
+import {
+  Actions,
+  SyncMovementPayload,
+  SetStartPositionPayload,
+  CreateMovementPayload,
+  UpdateMovementPayload
+} from "../actions/movement_actions"
 
 export type MovementState = Immutable<{
   movementId: string,
@@ -68,22 +74,59 @@ const updateMovementState : Reducer<MovementCollectionState> = function(
       {
         let payload : SetStartPositionPayload = action.payload;
         let movementId : string = payload.get("movementId");
+        let movements : Immutable<{[id: string] : MovementState}> = state.get("movements");
+        let movement : MovementState = movements.get(movementId)
         let rotation : number = payload.get("rotation");
         let x : number = payload.get("x");
         let y : number = payload.get("y");
-        let movements : Immutable<{[id: string] : MovementState}> = state.get("movements");
-        let movement : MovementState = movements.get(movementId)
+
+        let actionHistory = movement.get("actionHistory")
+          .push(action)
+          ;
+        movement = movement
           .set("movementId", movementId)
           .set("rotation", rotation)
           .set("x", x)
           .set("y", y)
+          .set("actionHistory", actionHistory)
           ;
         movements = movements.set(movementId, movement);
 
         return state
           .set("movements", movements)
           ;
+      }
 
+    case Actions.UPDATE_MOVEMENT:
+      {
+        let payload : UpdateMovementPayload = action.payload;
+        let movementId : string = payload.get("movementId");
+        let rotation : number = payload.get("rotation");
+        let acceleration : number = payload.get("acceleration");
+        let movements : Immutable<{[id: string] : MovementState}> = state.get("movements");
+        let movement : MovementState = movements.get(movementId);
+
+        if (movement === undefined) {
+          return state;
+        }
+
+        let actionHistory = movement.get("actionHistory")
+          .push(action)
+          ;
+        movement = movement
+          .set("actionHistory", actionHistory)
+          .set("acceleration", acceleration)
+          ;
+        
+        if (rotation !== undefined) {
+          movement = movement.set("rotation", rotation);
+        }
+
+        movements = movements.set(movementId, movement);
+
+        return state
+          .set("movements", movements)
+          ;
       }
 
     default:

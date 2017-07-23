@@ -12,7 +12,7 @@ type Server = {
 };
 
 let server : Server = {
-  adress: "ws://localhost:4000/socket",
+  adress: "ws://192.168.1.6:4000/socket",
 };
 
 export type JoinActionPayload = Immutable<{
@@ -78,9 +78,18 @@ export default function({dispatch, getState}) {
 
           server.channel = server.socket.channel(channel, authentication);
           server.channel.on("actions", 
-            ({actionList}) => actionList.forEach(
-              (serverAction) => dispatch(createAction(serverAction.type, immutableDeep(serverAction.payload)))
-            )
+            ({actionList}) => {
+              console.log(actionList);
+              actionList.forEach(
+                (serverAction) => dispatch(
+                  createAction(
+                    serverAction.type,
+                    immutableDeep(serverAction.payload),
+                    serverAction.serverId
+                  )
+                )
+              )
+            }
           );
           server.channel
             .join()
@@ -98,8 +107,10 @@ export default function({dispatch, getState}) {
             return next(action);
           }
 
-          server.channel.push("action", action.payload.get("action").toJS());
-          return next(action);
+          let dispatchableAction = { ...action.payload.get("action") };
+          dispatchableAction.payload = dispatchableAction.payload.toJS();
+          server.channel.push("action", dispatchableAction);
+          return;
         }
 
       default:
