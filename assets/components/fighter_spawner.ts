@@ -36,7 +36,7 @@ export default class FighterSpawner extends cc.Component {
       }
 
       this.spawnFighter(fighter);
-      this.spawnedFighters.push(id);
+      this.spawnedFighters = this.spawnedFighters.push(id);
     });
   }
 

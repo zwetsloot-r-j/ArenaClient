@@ -1,6 +1,9 @@
 import subscribe from "../utilities/subscriber"
 import {selectMovementCollectionState} from "../store/selectors/movement_selectors"
 import {MovementCollectionState, MovementState} from "../store/reducers/movement_reducers"
+import {List} from "immutable"
+import {Action} from "../store/actions/actions"
+import {SetStartPositionPayload, UpdateMovementPayload} from "../store/actions/movement_actions"
 const {ccclass} = cc._decorator;
 
 @ccclass
@@ -8,13 +11,13 @@ export default class Movement extends cc.Component {
 
   private unsubscribe: () => void
   private acceleration: number
-  private startX: number
-  private startY: number
+  private startX: number | null
+  private startY: number | null
 
   onLoad() : void {
     this.acceleration = 0;
-    this.startX = 0;
-    this.startY = 0;
+    this.startX = null;
+    this.startY = null;
   }
 
   initialize(id: string) : void {
@@ -28,41 +31,85 @@ export default class Movement extends cc.Component {
       return;
     }
     let node = this.node;
-    if (this.startX === 0) {
+    if (this.startX === null) {
       this.startX = state.get("x");
       node.x = this.startX;
     }
-    if (this.startY === 0) {
+    if (this.startY === null) {
       this.startY = state.get("y");
       node.y = this.startY;
     }
     node.rotation = state.get("rotation");
-    //TODO calculate movement with action history
-    
     this.acceleration = state.get("acceleration");
+
+    let {x, y} = this.calculateCurrentPosition(state);
+    node.x = x;
+    node.y = y;
+  }
+
+  calculateCurrentPosition(state: MovementState) : {x: number, y: number} {
+    let actionHistory : List<Action> = <List<Action>>state.get("actionHistory")
+      .sort((action1, action2) => action1.gameTime <= action2.gameTime ? -1 : 1);
+
+    return actionHistory.reduce((pos: {x: number, y: number}, prev: Action, index: number, collection: List<Action>) => {
+      let payload : SetStartPositionPayload | UpdateMovementPayload = prev.payload;
+      let x = payload.get("x");
+      if (x === undefined) {
+        x = pos.x;
+      }
+
+      let y = payload.get("y");
+      if (y === undefined) {
+        y = pos.y;
+      }
+
+      let next = collection.get(index + 1);
+      if (next === undefined) {
+        return {x, y};
+      }
+
+      let acceleration = (<UpdateMovementPayload>payload).get("acceleration");
+      if (!acceleration) {
+        return {x, y};
+      }
+
+      let startTime = prev.gameTime;
+      let endTime = next.gameTime;
+      let diff = endTime - startTime;
+      if (!diff) {
+        return {x, y};
+      }
+
+      let rotation = payload.get("rotation");
+      let dt = diff / 1000;
+
+      return this.calculateNextPosition({x, y}, dt, acceleration, rotation);
+
+    }, {x: this.node.x, y: this.node.y});
   }
 
   update(dt: number) : void {
     let acceleration = this.acceleration;
-    if (acceleration === 0) {
-      return;
-    }
-
     let rotation = this.node.rotation;
+    let {x, y} = this.calculateNextPosition({x: this.node.x, y: this.node.y}, dt, acceleration, rotation);
+    this.node.x = x;
+    this.node.y = y;
+   }
+
+  calculateNextPosition({x, y}, dt: number, acceleration: number, rotation: number) {
+    if (acceleration === 0) {
+      return {x, y};
+    }
     
     switch(rotation) {
       case 0:
-        this.node.y += acceleration * dt;
-        return;
+        return {x, y: y + acceleration * dt};
       case 90:
-        this.node.x += acceleration * dt;
-        return;
+        return {x: x + acceleration * dt, y};
       case 180:
-        this.node.y -= acceleration * dt;
-        return;
+        return {x, y: y - acceleration * dt};
       case 270:
-        this.node.x -= acceleration * dt;
-        return;
+        return {x: x - acceleration * dt, y};
       default:
         break;
     }
@@ -75,25 +122,18 @@ export default class Movement extends cc.Component {
     let b = c * Math.sin(beta);
 
     if (rotation < 90) {
-      this.node.x += a;
-      this.node.y += b;
-      return;
+      return {x: x + a, y: y + b};
     }
 
     if (rotation < 180) {
-      this.node.x += b;
-      this.node.y -= a;
-      return;
+      return {x: x + b, y: y - a};
     }
 
     if (rotation < 270) {
-      this.node.x -= a;
-      this.node.y -= b;
-      return;
+      return {x: x - a, y: y - b};
     }
 
-    this.node.x -= b;
-    this.node.y += a;
+    return {x: x - b, y: y + b};
   }
 
 }
