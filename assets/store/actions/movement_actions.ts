@@ -4,6 +4,7 @@ import {createAction, Action} from "./actions"
 export enum Actions {
   CREATE_MOVEMENT = "create-movement",
   SYNC_MOVEMENT = "sync-movement",
+  CONFIRM_SYNC_MOVEMENT = "confirm-sync-movement",
   SET_START_POSITION = "set-start-position",
   UPDATE_MOVEMENT = "update-movement",
 };
@@ -40,4 +41,8 @@ export function updateMovement(movementId: string, rotation: number | null, acce
     : immutable({movementId, rotation, acceleration});
 
   return createAction(Actions.UPDATE_MOVEMENT, payload);
+};
+
+export function confirmSynchronizeMovement(id: string, version: number) : Action {
+  return createAction(Actions.CONFIRM_SYNC_MOVEMENT, <SyncMovementPayload>immutable({id, version}));
 };

@@ -17,3 +17,9 @@ export const selectBattleActionHistory : (State: MainState) => List<Action> =
     selectBattleState,
     (state: BattleState) => state.get("actionHistory")
   );
+
+export const selectBattleVersion : (State: MainState) => number =
+  createSelector(
+    selectBattleState,
+    (state: BattleState) => state.get("version")
+  );

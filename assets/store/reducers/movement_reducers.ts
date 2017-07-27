@@ -36,7 +36,7 @@ const initialMovementState : MovementState = immutable({
   externalForceX: 0,
   externalForceY: 0,
   actionHistory: List(),
-  version: 0,
+  version: -1,
 });
 
 const initialState : MovementCollectionState = immutable({

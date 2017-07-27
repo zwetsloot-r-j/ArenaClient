@@ -1,9 +1,11 @@
 import subscribe from "../utilities/subscriber"
+import store from "../store/store"
 import {selectMovementCollectionState} from "../store/selectors/movement_selectors"
 import {MovementCollectionState, MovementState} from "../store/reducers/movement_reducers"
 import {List} from "immutable"
 import {Action} from "../store/actions/actions"
-import {SetStartPositionPayload, UpdateMovementPayload} from "../store/actions/movement_actions"
+import {confirmSynchronizeMovement, SyncMovementPayload, SetStartPositionPayload, UpdateMovementPayload} from "../store/actions/movement_actions"
+import {toServer} from "../store/middleware/connection_middleware"
 const {ccclass} = cc._decorator;
 
 @ccclass
@@ -13,11 +15,13 @@ export default class Movement extends cc.Component {
   private acceleration: number
   private startX: number | null
   private startY: number | null
+  private version: number
 
   onLoad() : void {
     this.acceleration = 0;
     this.startX = null;
     this.startY = null;
+    this.version = -1;
   }
 
   initialize(id: string) : void {
@@ -29,6 +33,11 @@ export default class Movement extends cc.Component {
   render(state: MovementState) : void {
     if (state === undefined) {
       return;
+    }
+    let version = state.get("version");
+    if (version > this.version) {
+      this.version = version;
+      store.dispatch(toServer(confirmSynchronizeMovement(state.get("movementId"), version)));
     }
     let node = this.node;
     if (this.startX === null) {
