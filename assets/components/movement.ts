@@ -1,11 +1,25 @@
 import subscribe from "../utilities/subscriber"
 import store from "../store/store"
 import {selectMovementCollectionState} from "../store/selectors/movement_selectors"
-import {MovementCollectionState, MovementState} from "../store/reducers/movement_reducers"
+import {
+  MovementCollectionState,
+  MovementState,
+  ActionHistoryMovementStatus,
+  ActionHistoryBlock,
+} from "../store/reducers/movement_reducers"
 import {List} from "immutable"
 import {Action} from "../store/actions/actions"
-import {confirmSynchronizeMovement, SyncMovementPayload, SetStartPositionPayload, UpdateMovementPayload} from "../store/actions/movement_actions"
+import {
+  confirmSynchronizeMovement,
+  recalculateMovementHistory,
+  cacheMovementState,
+  updateMovement,
+  SyncMovementPayload,
+  SetStartPositionPayload,
+  UpdateMovementPayload,
+} from "../store/actions/movement_actions"
 import {toServer} from "../store/middleware/connection_middleware"
+import {immutable} from "../utilities/immutable_types"
 const {ccclass} = cc._decorator;
 
 @ccclass
@@ -34,10 +48,19 @@ export default class Movement extends cc.Component {
     if (state === undefined) {
       return;
     }
+
+    let lastActionHistory : ActionHistoryBlock = state.get("actionHistory").last();
+    if (lastActionHistory.get("actions").count() === 0) {
+      return;
+    }
+
     let version = state.get("version");
     if (version > this.version) {
       this.version = version;
       store.dispatch(toServer(confirmSynchronizeMovement(state.get("movementId"), version)));
+      if (!this.verifyLastActionHistoryState(state)) {
+        return;
+      };
     }
     let node = this.node;
     if (this.startX === null) {
@@ -54,11 +77,70 @@ export default class Movement extends cc.Component {
     let {x, y} = this.calculateCurrentPosition(state);
     node.x = x;
     node.y = y;
+
+    let movementStatus : ActionHistoryMovementStatus = immutable({
+      x,
+      y,
+      rotation: state.get("rotation"),
+      acceleration: state.get("acceleration"),
+      externalForceX: state.get("externalForceX"),
+      externalForceY: state.get("externalForceY"),
+      gameTime: lastActionHistory
+        .get("actions")
+        .reduce((lastGameTime, {gameTime}) => Math.max(lastGameTime, gameTime), 0),
+    });
+
+    store.dispatch(cacheMovementState(state.get("movementId"), movementStatus));
+  }
+
+  verifyLastActionHistoryState(state: MovementState) : boolean {
+    let lastActionHistory : ActionHistoryBlock = state
+      .get("actionHistory")
+      .last()
+      ;
+
+    let lastMovementStatus : ActionHistoryMovementStatus = lastActionHistory
+      .get("status")
+      ;
+
+    if (!lastMovementStatus) {
+      return true;
+    }
+
+    if (lastActionHistory.get("actions").some((action: Action) => action.gameTime < lastMovementStatus.get("gameTime"))) {
+      store.dispatch(recalculateMovementHistory(state.get("movementId")));
+      return false;
+    }
+
+    return true;
   }
 
   calculateCurrentPosition(state: MovementState) : {x: number, y: number} {
-    let actionHistory : List<Action> = <List<Action>>state.get("actionHistory")
-      .sort((action1, action2) => action1.gameTime <= action2.gameTime ? -1 : 1);
+    let lastActionHistory : ActionHistoryBlock = state
+      .get("actionHistory")
+      .last()
+      ;
+
+    let lastMovementStatus : ActionHistoryMovementStatus = lastActionHistory
+      .get("status")
+      ;
+
+    let actionHistory : List<Action> = <List<Action>>lastActionHistory
+      .get("actions")
+      .sort((action1, action2) => action1.gameTime <= action2.gameTime ? -1 : 1)
+      ;
+
+    let startX = lastMovementStatus ? lastMovementStatus.get("x") : this.node.x;
+    let startY = lastMovementStatus ? lastMovementStatus.get("y") : this.node.y;
+    if (lastMovementStatus) {
+      let startMovement : Action = updateMovement(
+        state.get("movementId"),
+        lastMovementStatus.get("rotation"),
+        lastMovementStatus.get("acceleration"),
+      );
+      startMovement.gameTime = lastMovementStatus.get("gameTime");
+      actionHistory = actionHistory.unshift(startMovement);
+    }
 
     return actionHistory.reduce((pos: {x: number, y: number}, prev: Action, index: number, collection: List<Action>) => {
       let payload : SetStartPositionPayload | UpdateMovementPayload = prev.payload;
@@ -94,7 +176,7 @@ export default class Movement extends cc.Component {
 
       return this.calculateNextPosition({x, y}, dt, acceleration, rotation);
 
-    }, {x: this.node.x, y: this.node.y});
+    }, {x: startX, y: startY});
   }
 
   update(dt: number) : void {

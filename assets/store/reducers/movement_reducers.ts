@@ -7,8 +7,25 @@ import {
   SyncMovementPayload,
   SetStartPositionPayload,
   CreateMovementPayload,
-  UpdateMovementPayload
+  UpdateMovementPayload,
+  RecalculateMovementHistoryPayload,
+  CacheMovementStatePayload,
 } from "../actions/movement_actions"
+
+export type ActionHistoryMovementStatus = Immutable<{
+  gameTime: number,
+  x: number,
+  y: number,
+  acceleration: number,
+  externalForceX: number,
+  externalForceY: number,
+  rotation: number,
+}>;
+
+export type ActionHistoryBlock = Immutable<{
+  status?: ActionHistoryMovementStatus,
+  actions: List<Action>,
+}>;
 
 export type MovementState = Immutable<{
   movementId: string,
@@ -18,7 +35,7 @@ export type MovementState = Immutable<{
   acceleration: number,
   externalForceX: number,
   externalForceY: number,
-  actionHistory: List<Action>,
+  actionHistory: List<ActionHistoryBlock>,
   version: number,
 }>;
 
@@ -35,7 +52,11 @@ const initialMovementState : MovementState = immutable({
   acceleration: 0,
   externalForceX: 0,
   externalForceY: 0,
-  actionHistory: List(),
+  actionHistory: List([
+    immutable({
+      actions: List(),
+    }),
+  ]),
   version: -1,
 });
 
@@ -80,9 +101,16 @@ const updateMovementState : Reducer<MovementCollectionState> = function(
         let x : number = payload.get("x");
         let y : number = payload.get("y");
 
-        let actionHistory = movement.get("actionHistory")
+        let actionHistory : List<ActionHistoryBlock> = movement.get("actionHistory");
+        let lastActionHistory : ActionHistoryBlock = actionHistory.last();
+        let actions : List<Action> = lastActionHistory
+          .get("actions")
           .push(action)
           ;
+
+        lastActionHistory = lastActionHistory.set("actions", actions);
+        actionHistory = actionHistory.pop().push(lastActionHistory);
+
         movement = movement
           .set("movementId", movementId)
           .set("rotation", rotation)
@@ -110,9 +138,16 @@ const updateMovementState : Reducer<MovementCollectionState> = function(
           return state;
         }
 
-        let actionHistory = movement.get("actionHistory")
+        let actionHistory : List<ActionHistoryBlock> = movement.get("actionHistory");
+        let lastActionHistory : ActionHistoryBlock = actionHistory.last();
+        let actions : List<Action> = lastActionHistory
+          .get("actions")
           .push(action)
           ;
+
+        lastActionHistory = lastActionHistory.set("actions", actions);
+        actionHistory = actionHistory.pop().push(lastActionHistory);
+
         movement = movement
           .set("actionHistory", actionHistory)
           .set("acceleration", acceleration)
@@ -122,6 +157,62 @@ const updateMovementState : Reducer<MovementCollectionState> = function(
           movement = movement.set("rotation", rotation);
         }
 
+        movements = movements.set(movementId, movement);
+
+        return state
+          .set("movements", movements)
+          ;
+      }
+
+    case Actions.RECALCULATE_MOVEMENT_HISTORY:
+      {
+        let payload : RecalculateMovementHistoryPayload = action.payload;
+        let movementId : string = payload.get("id");
+        let movements : Immutable<{[id: string] : MovementState}> = state.get("movements");
+        let movement : MovementState = movements.get(movementId);
+        let actionHistory : List<ActionHistoryBlock> = movement
+          .get("actionHistory")
+          ;
+
+        while (true) {
+          if (actionHistory.count() <= 1) {
+            break;
+          }
+          let actionHistoryBlock : ActionHistoryBlock = actionHistory.last();
+          let movementStatus : ActionHistoryMovementStatus = actionHistoryBlock.get("status");
+          if (!movementStatus) {
+            break;
+          }
+          if (!actionHistoryBlock.get("actions").some((action: Action) => action.gameTime < movementStatus.get("gameTime"))) {
+            break;
+          }
+          actionHistory = actionHistory.pop();
+          let previous : ActionHistoryBlock = actionHistory.last();
+          previous.set("actions", previous.get("actions").concat(actionHistoryBlock.get("actions")));
+          actionHistory = actionHistory.pop().push(previous);
+        }
+
+        movement = movement.set("actionHistory", actionHistory);
+        movements = movements.set(movementId, movement);
+
+        return state
+          .set("movements", movements)
+          ;
+      }
+
+    case Actions.CACHE_MOVEMENT_STATE:
+      {
+        let payload : CacheMovementStatePayload = action.payload;
+        let movementId : string = payload.get("id");
+        let movements : Immutable<{[id: string] : MovementState}> = state.get("movements");
+        let movement : MovementState = movements.get(movementId);
+        let actionHistory : List<ActionHistoryBlock> = movement.get("actionHistory");
+        let newActionHistoryBlock : ActionHistoryBlock = immutable({
+          status: payload.get("movementStatus"),
+          actions: List(),
+        });
+        actionHistory = actionHistory.push(newActionHistoryBlock);
+        movement = movement.set("actionHistory", actionHistory);
         movements = movements.set(movementId, movement);
 
         return state

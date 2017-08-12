@@ -23,7 +23,9 @@ export default function({dispatch, getState}) {
     }
 
     dispatch(archiveBattleAction(action));
-    return next(action);
+    let result = next(action);
+
+    return result;
   };
 
 };

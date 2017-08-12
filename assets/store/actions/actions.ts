@@ -24,18 +24,22 @@ type StandardAction = ReduxAction & {
 export type Action = StandardAction
   ;
 
-export function createAction(type: string, payload: Payload = immutable({}), serverId = null) : Action {
+export function createAction(type: string, payload: Payload = immutable({}), serverId = null, clientId = null) : Action {
   if (serverId !== null) {
-    return imprintId({type, payload, serverId});
+    return imprintId({type, payload, serverId}, clientId);
   }
-  return imprintId({type, payload});
+  return imprintId({type, payload}, clientId);
 };
 
-function imprintId(action: Action) {
+function imprintId(action: Action, clientId: string | null) {
   let user = selectBattlePlayer(<MainState>store.getState());
+  action.gameTime = Date.now();
+  if (clientId !== null) {
+    action.clientId = clientId;
+    return action;
+  }
   if (user !== undefined && user !== "") {
     action.clientId = user + "_" + (nextId++);
   }
-  action.gameTime = Date.now();
   return action;
 };

@@ -63,6 +63,7 @@ export default class Controller extends cc.Component {
   private controlledMovementId: string
   private unsubscribeUpdateControlledMovement: () => void
   private unsubscribe: () => void
+  private ignorePressed: number[]
 
   onLoad() : void {
     this.unsubscribeUpdateControlledMovement = subscribe(
@@ -75,6 +76,7 @@ export default class Controller extends cc.Component {
       (controllerState: ControllerState) => this.render(controllerState)
     );
 
+    this.ignorePressed = [];
     this.initializeControls();
   }
 
@@ -86,6 +88,8 @@ export default class Controller extends cc.Component {
     if (this.controlledMovementId === undefined || this.controlledMovementId === "") {
       return; 
     }
+
+    let startTime = Date.now();
 
     let xIndex = this.getXRotationMapIndex(controllerState.get("xAxisButtonsPressed"));
     let yIndex = this.getYRotationMapIndex(controllerState.get("yAxisButtonsPressed"));
@@ -110,6 +114,11 @@ export default class Controller extends cc.Component {
           return;
         }
 
+        if (~this.ignorePressed.indexOf(keycode)) {
+          return;
+        }
+        this.ignorePressed.push(keycode);
+
         let action = PRESS_ACTIONS_BY_KEY[keycode];
         if (action === undefined) {
           return;
@@ -122,6 +131,8 @@ export default class Controller extends cc.Component {
         if (this.controlledMovementId === undefined || this.controlledMovementId === "") {
           return;
         }
+
+        this.ignorePressed.splice(this.ignorePressed.indexOf(keycode), 1);
 
         let action = RELEASE_ACTIONS_BY_KEY[keycode];
         if (action === undefined) {
