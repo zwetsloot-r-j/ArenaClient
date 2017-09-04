@@ -18,8 +18,20 @@ class Subscriber {
     if (this.previousState === state) {
       return;
     }
+    let startTime = Date.now();
     this.previousState = state;
     this.callback(state);
+    let time = Date.now() - startTime;
+
+    if (time <= 5) {
+
+    } else if (time < 25) {
+      console.warn(`handling of subscriber took ${time}`);
+      console.warn(JSON.stringify(this.select));
+    } else {
+      console.error(`handling of subscriber toor ${time}`);
+      console.error(JSON.stringify(this.select));
+    }
   }
 
   destroy() {

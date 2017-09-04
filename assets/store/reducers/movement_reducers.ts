@@ -6,7 +6,6 @@ import {
   Actions,
   SyncMovementPayload,
   SetStartPositionPayload,
-  CreateMovementPayload,
   UpdateMovementPayload,
   RecalculateMovementHistoryPayload,
   CacheMovementStatePayload,
@@ -97,6 +96,10 @@ const updateMovementState : Reducer<MovementCollectionState> = function(
         let movementId : string = payload.get("movementId");
         let movements : Immutable<{[id: string] : MovementState}> = state.get("movements");
         let movement : MovementState = movements.get(movementId)
+        if (movement === undefined) {
+          movement = initialMovementState.set("movementId", movementId);
+          state = state.set("movementCount", state.get("movementCount") + 1);
+        }
         let rotation : number = payload.get("rotation");
         let x : number = payload.get("x");
         let y : number = payload.get("y");
@@ -218,6 +221,28 @@ const updateMovementState : Reducer<MovementCollectionState> = function(
         return state
           .set("movements", movements)
           ;
+      }
+
+    case Actions.UPDATE_MOVEMENT_ID:
+      {
+        let payload : UpdateMovementIdPayload = acion.payload;
+        let movementId : string = payload.get("from");
+        let newMovementId : string = payload.get("to");
+        let movements : Immutable<{[id: string] : MovementState}> = state.get("movements");
+        let movement : MovementState = movements
+          .get(movementId)
+          .set("movementId", newMovementId)
+          ;
+
+        movements = movements
+          .set(newMovementId, movement)
+          .delete(movementId)
+          ;
+
+        return state
+          .set("movements", movements)
+          ;
+        
       }
 
     default:

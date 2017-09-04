@@ -12,7 +12,7 @@ type Server = {
 };
 
 let server : Server = {
-  adress: "ws://192.168.0.6:4000/socket",
+  adress: "ws://localhost:4000/socket",
 };
 
 export type JoinActionPayload = Immutable<{

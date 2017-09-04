@@ -3,18 +3,14 @@ import {createAction, Action} from "./actions"
 import {ActionHistoryMovementStatus} from "../reducers/movement_reducers"
 
 export enum Actions {
-  CREATE_MOVEMENT = "create-movement",
   SYNC_MOVEMENT = "sync-movement",
   CONFIRM_SYNC_MOVEMENT = "confirm-sync-movement",
   SET_START_POSITION = "set-start-position",
   UPDATE_MOVEMENT = "update-movement",
   RECALCULATE_MOVEMENT_HISTORY = "recalculate-movement-history",
   CACHE_MOVEMENT_STATE = "cache-movement-state",
+  UPDATE_MOVEMENT_ID = "update-movement-id",
 };
-
-export type CreateMovementPayload = Immutable<{
-  id: string,
-}>;
 
 export type SyncMovementPayload = Immutable<{
   id: string,
@@ -43,8 +39,18 @@ export type CacheMovementStatePayload = Immutable<{
   movementStatus: ActionHistoryMovementStatus,
 }>;
 
-export function createMovement(id: string) : Action {
-  return createAction(Actions.CREATE_MOVEMENT, <CreateMovementPayload>immutable({id}));
+export type UpdateMovementIdPayload = Immutable<{
+  from: string,
+  to: string,
+}>;
+
+export function setStartPosition(movementId: string, rotation: number, x: number, y: number): Action {
+  return createAction(Actions.SET_START_POSITION, <SetStartPositionPayload>immutable({
+    movementId,
+    rotation,
+    x,
+    y,
+  }));
 };
 
 export function updateMovement(movementId: string, rotation: number | null, acceleration: number) : Action {

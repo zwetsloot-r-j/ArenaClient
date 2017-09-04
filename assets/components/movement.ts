@@ -44,6 +44,11 @@ export default class Movement extends cc.Component {
     ) });
   }
 
+  changeId(id: string) : void {
+    this.unsubscribe();
+    this.initialize(id);
+  }
+
   render(state: MovementState) : void {
     if (state === undefined) {
       return;
@@ -74,7 +79,7 @@ export default class Movement extends cc.Component {
     node.rotation = state.get("rotation");
     this.acceleration = state.get("acceleration");
 
-    let {x, y} = this.calculateCurrentPosition(state);
+    let {x, y} = calculateCurrentPosition(state);
     node.x = x;
     node.y = y;
 
@@ -115,116 +120,121 @@ export default class Movement extends cc.Component {
     return true;
   }
 
-  calculateCurrentPosition(state: MovementState) : {x: number, y: number} {
-    let lastActionHistory : ActionHistoryBlock = state
-      .get("actionHistory")
-      .last()
-      ;
-
-    let lastMovementStatus : ActionHistoryMovementStatus = lastActionHistory
-      .get("status")
-      ;
-
-    let actionHistory : List<Action> = <List<Action>>lastActionHistory
-      .get("actions")
-      .sort((action1, action2) => action1.gameTime <= action2.gameTime ? -1 : 1)
-      ;
-
-    let startX = lastMovementStatus ? lastMovementStatus.get("x") : this.node.x;
-    let startY = lastMovementStatus ? lastMovementStatus.get("y") : this.node.y;
-    if (lastMovementStatus) {
-      let startMovement : Action = updateMovement(
-        state.get("movementId"),
-        lastMovementStatus.get("rotation"),
-        lastMovementStatus.get("acceleration"),
-      );
-      startMovement.gameTime = lastMovementStatus.get("gameTime");
-      actionHistory = actionHistory.unshift(startMovement);
-    }
-
-    return actionHistory.reduce((pos: {x: number, y: number}, prev: Action, index: number, collection: List<Action>) => {
-      let payload : SetStartPositionPayload | UpdateMovementPayload = prev.payload;
-      let x = payload.get("x");
-      if (x === undefined) {
-        x = pos.x;
-      }
-
-      let y = payload.get("y");
-      if (y === undefined) {
-        y = pos.y;
-      }
-
-      let next = collection.get(index + 1);
-      if (next === undefined) {
-        return {x, y};
-      }
-
-      let acceleration = (<UpdateMovementPayload>payload).get("acceleration");
-      if (!acceleration) {
-        return {x, y};
-      }
-
-      let startTime = prev.gameTime;
-      let endTime = next.gameTime;
-      let diff = endTime - startTime;
-      if (!diff) {
-        return {x, y};
-      }
-
-      let rotation = payload.get("rotation");
-      let dt = diff / 1000;
-
-      return this.calculateNextPosition({x, y}, dt, acceleration, rotation);
-
-    }, {x: startX, y: startY});
-  }
-
   update(dt: number) : void {
     let acceleration = this.acceleration;
     let rotation = this.node.rotation;
-    let {x, y} = this.calculateNextPosition({x: this.node.x, y: this.node.y}, dt, acceleration, rotation);
+    let {x, y} = calculateNextPosition({x: this.node.x, y: this.node.y}, dt, acceleration, rotation);
     this.node.x = x;
     this.node.y = y;
-   }
+  }
 
-  calculateNextPosition({x, y}, dt: number, acceleration: number, rotation: number) {
-    if (acceleration === 0) {
-      return {x, y};
-    }
-    
-    switch(rotation) {
-      case 0:
-        return {x, y: y + acceleration * dt};
-      case 90:
-        return {x: x + acceleration * dt, y};
-      case 180:
-        return {x, y: y - acceleration * dt};
-      case 270:
-        return {x: x - acceleration * dt, y};
-      default:
-        break;
-    }
-
-    let c = acceleration * dt;
-    let gamma = 90;
-    let beta = rotation % 90;
-    let alpha = 90 - beta;
-    let a = c * Math.sin(alpha);
-    let b = c * Math.sin(beta);
-
-    if (rotation < 90) {
-      return {x: x + a, y: y + b};
-    }
-
-    if (rotation < 180) {
-      return {x: x + b, y: y - a};
-    }
-
-    if (rotation < 270) {
-      return {x: x - a, y: y - b};
-    }
-
-    return {x: x - b, y: y + b};
+  onDestroy() : void {
+    this.unsubscribe();
   }
 
 }
+
+export const calculateCurrentPosition = (state: MovementState) : {x: number, y: number} => {
+  let lastActionHistory : ActionHistoryBlock = state
+    .get("actionHistory")
+    .last()
+    ;
+
+  let lastMovementStatus : ActionHistoryMovementStatus = lastActionHistory
+    .get("status")
+    ;
+
+  let actionHistory : List<Action> = <List<Action>>lastActionHistory
+    .get("actions")
+    .sort((action1, action2) => action1.gameTime <= action2.gameTime ? -1 : 1)
+    ;
+
+  let startX = lastMovementStatus ? lastMovementStatus.get("x") : state.get("x");
+  let startY = lastMovementStatus ? lastMovementStatus.get("y") : state.get("y");
+  if (lastMovementStatus) {
+    let startMovement : Action = updateMovement(
+      state.get("movementId"),
+      lastMovementStatus.get("rotation"),
+      lastMovementStatus.get("acceleration"),
+    );
+    startMovement.gameTime = lastMovementStatus.get("gameTime");
+    actionHistory = actionHistory.unshift(startMovement);
+  }
+
+  return actionHistory.reduce((pos: {x: number, y: number}, prev: Action, index: number, collection: List<Action>) => {
+    let payload : SetStartPositionPayload | UpdateMovementPayload = prev.payload;
+    let x = payload.get("x");
+    if (x === undefined) {
+      x = pos.x;
+    }
+
+    let y = payload.get("y");
+    if (y === undefined) {
+      y = pos.y;
+    }
+
+    let next = collection.get(index + 1);
+    if (next === undefined) {
+      return {x, y};
+    }
+
+    let acceleration = (<UpdateMovementPayload>payload).get("acceleration");
+    if (!acceleration) {
+      return {x, y};
+    }
+
+    let startTime = prev.gameTime;
+    let endTime = next.gameTime;
+    let diff = endTime - startTime;
+    if (!diff) {
+      return {x, y};
+    }
+
+    let rotation = payload.get("rotation");
+    let dt = diff / 1000;
+
+    return calculateNextPosition({x, y}, dt, acceleration, rotation);
+
+  }, {x: startX, y: startY});
+};
+
+const calculateNextPosition = ({x, y}, dt: number, acceleration: number, rotation: number) => {
+  if (acceleration === 0) {
+    return {x, y};
+  }
+  
+  switch(rotation) {
+    case 0:
+      return {x, y: y + acceleration * dt};
+    case 90:
+      return {x: x + acceleration * dt, y};
+    case 180:
+      return {x, y: y - acceleration * dt};
+    case 270:
+      return {x: x - acceleration * dt, y};
+    default:
+      break;
+  }
+
+  let c = acceleration * dt;
+  let gamma = 90;
+  let alpha = rotation % 90;
+  let beta = 90 - alpha;
+  let a = c * Math.sin(alpha / 180 * Math.PI);
+  let b = c * Math.sin(beta / 180 * Math.PI);
+
+  if (rotation < 90) {
+    return {x: x + a, y: y + b};
+  }
+
+  if (rotation < 180) {
+    return {x: x + b, y: y - a};
+  }
+
+  if (rotation < 270) {
+    return {x: x - a, y: y - b};
+  }
+
+  return {x: x - b, y: y + a};
+}
+
