@@ -151,24 +151,30 @@ export const calculateCurrentPosition = (state: MovementState) : {x: number, y: 
 
   let startX = lastMovementStatus ? lastMovementStatus.get("x") : state.get("x");
   let startY = lastMovementStatus ? lastMovementStatus.get("y") : state.get("y");
+  let rotation = lastMovementStatus ? lastMovementStatus.get("rotation") : state.get("rotation");
   if (lastMovementStatus) {
     let startMovement : Action = updateMovement(
       state.get("movementId"),
-      lastMovementStatus.get("rotation"),
+      rotation,
       lastMovementStatus.get("acceleration"),
     );
     startMovement.gameTime = lastMovementStatus.get("gameTime");
     actionHistory = actionHistory.unshift(startMovement);
   }
 
+  let toCurrentTimeAction = updateMovement(
+    state.get("movementId"), null, (actionHistory.last().payload as UpdateMovementPayload).get("acceleration")
+  );
+  actionHistory = actionHistory.push(toCurrentTimeAction);
+
   return actionHistory.reduce((pos: {x: number, y: number}, prev: Action, index: number, collection: List<Action>) => {
     let payload : SetStartPositionPayload | UpdateMovementPayload = prev.payload;
-    let x = payload.get("x");
+    let x = (payload as SetStartPositionPayload).get("x");
     if (x === undefined) {
       x = pos.x;
     }
 
-    let y = payload.get("y");
+    let y = (payload as SetStartPositionPayload).get("y");
     if (y === undefined) {
       y = pos.y;
     }
@@ -190,7 +196,7 @@ export const calculateCurrentPosition = (state: MovementState) : {x: number, y: 
       return {x, y};
     }
 
-    let rotation = payload.get("rotation");
+    rotation = payload.get("rotation") || rotation;
     let dt = diff / 1000;
 
     return calculateNextPosition({x, y}, dt, acceleration, rotation);
